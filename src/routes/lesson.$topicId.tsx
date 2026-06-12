@@ -9,12 +9,10 @@ import {
   CheckCircle2,
   GraduationCap,
   Languages,
-  Pause,
   Play,
   Sparkles,
-  Volume2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 function findTopic(topicId: string): { topic: Topic; chapter: Chapter } | null {
@@ -49,9 +47,20 @@ export const Route = createFileRoute("/lesson/$topicId")({
 
 function LessonView() {
   const { topic, chapter } = Route.useLoaderData() as { topic: Topic; chapter: Chapter };
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [watched, setWatched] = useState(false);
   const [lang, setLang] = useState<"EN" | "HI">("EN");
   const [tab, setTab] = useState<"theory" | "visual" | "real" | "quiz">("theory");
+  const watchedStorageKey = `watched:${topic.id}`;
+
+  useEffect(() => {
+    setWatched(localStorage.getItem(watchedStorageKey) === "true");
+  }, [watchedStorageKey]);
+
+  function markWatched() {
+    localStorage.setItem(watchedStorageKey, "true");
+    setWatched(true);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,81 +100,59 @@ function LessonView() {
                 {topic.summary}
               </p>
 
-              <div className="mt-4 sm:hidden">
-                <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-[oklch(0.18_0.04_265)] font-mono ring-1 ring-white/5">
-                  <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-black/20 px-3 py-2 text-[10px] text-white/45">
-                    <span className="truncate">// {topic.title}</span>
-                    <span className="ml-2 shrink-0">04:12</span>
+              {topic.videoUrl ? (
+                <div className="mt-4 sm:mt-6">
+                  <video
+                    className="aspect-video w-full rounded-xl bg-black object-contain ring-1 ring-white/10 sm:rounded-2xl"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    src={topic.videoUrl}
+                    onPlay={() => setPlaying(true)}
+                    onPause={() => setPlaying(false)}
+                    onEnded={() => {
+                      setPlaying(false);
+                      markWatched();
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="mt-4 flex aspect-video w-full flex-col items-center justify-center rounded-xl bg-[oklch(0.18_0.04_265)] p-6 text-center ring-1 ring-white/5 sm:mt-6 sm:rounded-2xl">
+                  <Play className="h-10 w-10 text-white/50" />
+                  <div className="mt-3 font-display text-lg font-semibold">Video coming soon</div>
+                  <p className="mt-1 max-w-md text-sm text-white/60">
+                    This topic does not have a CDN video link yet.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-4 flex w-full min-w-0 max-w-full flex-col gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-white/10 sm:mt-5 sm:flex-row sm:items-center sm:justify-between sm:rounded-2xl sm:p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                      watched ? "bg-success text-success-foreground" : "bg-white text-foreground",
+                    )}
+                  >
+                    {watched ? <CheckCircle2 className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                   </div>
-                  <div className="flex h-full flex-col items-center justify-center px-4 pb-10 pt-8 text-center">
-                    <div className="text-2xl font-semibold">a = bq + r</div>
-                    <div className="mt-1 text-[11px] text-white/55">where 0 ≤ r &lt; b</div>
-                    <div className="mt-3 max-w-[15rem] text-[10px] leading-relaxed text-white/65">
-                      Apply Euclid's lemma repeatedly until the remainder becomes zero.
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">
+                      {watched ? "Video completed" : playing ? "Video playing" : "Ready to watch"}
+                    </div>
+                    <div className="text-xs text-white/60">
+                      Progress is saved in this browser for {topic.title}.
                     </div>
                   </div>
-                  <div className="absolute inset-x-3 bottom-3 rounded-xl bg-black/25 p-2.5 backdrop-blur-sm ring-1 ring-white/10">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setPlaying((p) => !p)}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-foreground"
-                      >
-                        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between text-[10px] text-white/60">
-                          <span>04:12</span>
-                          <span>{topic.duration}</span>
-                        </div>
-                        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/15">
-                          <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-accent to-primary-glow" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              </div>
-
-              <div className="mt-4 hidden w-full max-w-full flex-col overflow-hidden rounded-xl bg-[oklch(0.18_0.04_265)] p-3 font-mono ring-1 ring-white/5 sm:mt-6 sm:flex sm:aspect-video sm:rounded-2xl sm:p-8">
-                <div className="truncate text-[11px] text-white/40 sm:text-xs">
-                  // {topic.title}
-                </div>
-                <div className="mt-3 text-2xl sm:mt-4 sm:text-3xl">a = bq + r</div>
-                <div className="mt-1 text-xs text-white/50 sm:text-sm">where 0 ≤ r &lt; b</div>
-                <div className="mt-5 text-[11px] text-white/40 sm:mt-8 sm:text-xs">
-                  Step-by-step
-                </div>
-                <div className="mt-2 space-y-1 break-words text-[11px] leading-relaxed text-white/90 sm:text-base">
-                  <div>1. Apply division lemma to a and b</div>
-                  <div>2. If r = 0, HCF is b</div>
-                  <div>3. Else apply lemma to b and r, repeat</div>
-                </div>
-                <div className="mt-auto break-words pt-4 text-[11px] text-accent sm:pt-6 sm:text-sm">
-                  ✦ Animated whiteboard plays as Ms. Nova explains
-                </div>
-              </div>
-
-              {/* Player */}
-              <div className="mt-4 hidden w-full min-w-0 max-w-full items-center gap-2 rounded-xl bg-white/5 p-2.5 ring-1 ring-white/10 sm:mt-5 sm:flex sm:rounded-2xl sm:gap-4 sm:p-4">
-                <button
-                  onClick={() => setPlaying((p) => !p)}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-foreground transition hover:scale-105 sm:h-11 sm:w-11"
+                <Button
+                  type="button"
+                  onClick={markWatched}
+                  className="bg-white text-foreground hover:bg-white/90"
                 >
-                  {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3 text-xs text-white/60">
-                    <span>04:12</span>
-                    <span>{topic.duration}</span>
-                  </div>
-                  <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full w-2/5 rounded-full bg-gradient-to-r from-accent to-primary-glow" />
-                  </div>
-                </div>
-                <Volume2 className="hidden h-4 w-4 text-white/60 sm:block" />
-                <div className="hidden h-10 w-10 items-center justify-center rounded-full bg-gradient-hero sm:flex">
-                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
-                </div>
+                  <CheckCircle2 className="h-4 w-4" />
+                  Mark as watched
+                </Button>
               </div>
             </div>
 
@@ -306,7 +293,7 @@ function LessonView() {
             <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Sparkles className="h-4 w-4 text-accent" />
-                You're 80% through this topic.
+                {watched ? "You completed this topic video." : "Watch the video to save progress."}
               </div>
               <Button
                 asChild
@@ -361,7 +348,9 @@ function LessonView() {
                         {chapter.number}.{i + 1}
                       </span>
                       <span className="truncate">{t.title}</span>
-                      {t.completed && <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-success" />}
+                      {(t.completed || (t.id === topic.id && watched)) && (
+                        <CheckCircle2 className="ml-auto h-3.5 w-3.5 text-success" />
+                      )}
                     </Link>
                   </li>
                 ))}

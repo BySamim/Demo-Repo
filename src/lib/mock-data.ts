@@ -14,6 +14,7 @@ export interface Topic {
   summary: string;
   duration: string;
   completed: boolean;
+  videoUrl?: string;
   examples: Example[];
 }
 
@@ -52,6 +53,8 @@ export const chapters: Chapter[] = [
           "Understand division as repeated subtraction and find the HCF using Euclid's algorithm.",
         duration: "12 min",
         completed: true,
+        videoUrl:
+          `${import.meta.env.BASE_URL}videos/Class_10_Maths_Chapter_1_Real_Numbers___Full_Concept_Video.mp4`,
         examples: [
           {
             id: "e-1-1-1",
